@@ -8,7 +8,7 @@
 
 from dataclasses import dataclass, field
 import numpy as np
-
+import matplotlib.pyplot as graph
 
 # parameters
 @dataclass
@@ -248,6 +248,7 @@ def GA():
 
         next_pop_min = np.min(next_pop_fitness)
         next_pop_max = np.max(next_pop_fitness)
+        best_fit_history.append(np.max(next_pop_fitness))
 
         if next_pop_max == best_fit_history[iteration]:
             nrm += 1
@@ -258,7 +259,6 @@ def GA():
         else:
             iteration += 1
 
-        best_fit_history.append(np.max(next_pop_fitness))
         initial_pop = next_pop.copy()
         initial_pop_fitness = next_pop_fitness.copy()
 
@@ -273,6 +273,18 @@ def GA():
     print("\nBest fitness: ")
     print(np.round(max_fitness, 4))
 
+    # graph display
+    yaxis = best_fit_history.copy()
+    xaxis = []
+    for i in range(iteration + 2):
+        xaxis += [i + 1]
+
+    graph.title("Best Fitness Values over {0} iterations".format(iteration + 2))
+    graph.xlabel("Iteration no.")
+    graph.ylabel("Best fitness value of  x")
+    graph.plot(xaxis, yaxis)
+    graph.show()
 
 # import n_greek_states as greekpb
 # greekpb.GA()
+
