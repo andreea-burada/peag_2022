@@ -1,6 +1,6 @@
-# Utilizați un algoritm genetic pentru a rezolva problema: pentru plata unei sume S se pot folosi bancnote cu n valori nominale distincte (v[i], i=1,…,n).
-# NU este disponibila bancnota cu valoare 1. Pentru fiecare valoare nominala este disponibila o cantitate limitata de bancnote (c[i], i=1,…,n).
-# Găsiți o modalitate de plata care folosește numărul minim de bancnote. Este utilizat un algoritm genetic.
+# Sunt considerate cunoscute n piese de domino, reprezentate ca perechi de numere naturale. Utilizati un
+# algoritm genetic pentru a determina, daca exista, un lant domino format din m piese (adica o secventa de
+# m piese) cu proprietatea ca orice doua elemente vecine sunt de tipul (x1, y1), (x2 = y1, y2)
 
 # imports
 from dataclasses import dataclass, field
@@ -11,35 +11,29 @@ import matplotlib.pyplot as graph
 # parameters
 @dataclass
 class Parameters:
-    pop_size: int = 100
-    n: int = 7
+    pop_size: int = 40
+    n: int = 36  # total number of domino pieces
+    m: int = 8  # length of sequence that needs to comply to the restrictions
     max_iterations: int = 500
-    to_pay: int = 50  # sum we have to pay
-    bill_values: list = field(default_factory=lambda: [])
-    max_bill_amounts: list = field(default_factory=lambda: [])
     crossover_probability: float = 0.8
     mutation_probability: float = 0.1
-    # bill_value_txt : str = "bill_values.txt"
-    # bill_amounts_txt: str = "bill_amounts.txt"
 
 
 parameters = Parameters()
 
-parameters.bill_values = [2, 3, 5, 7, 10, 11, 13]
-# parameters.bill_values = np.genfromtxt(parameters.bill_value_txt)
-
-parameters.max_bill_amounts = [8, 11, 2, 3, 5, 7, 4]
-
-
-# parameters.max_bill_amounts = np.genfromtxt(parameters.bill_amounts_txt)
+dominos = [[1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6],
+           [3, 1], [3, 2], [3, 3], [3, 4], [3, 5], [3, 6], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [4, 6],
+           [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6]]
 
 
 # cost function
 # cost_v to avoid having the same variable name in two functions
 def cost_func(individ):
     cost_v = 0
-    for i in range(parameters.n):
-        cost_v += individ[i]
+    # we count how many domino pieces don't fit our problem
+    for i in range(parameters.m - 1):
+        if dominos[individ[i]][1] != dominos[individ[i + 1]][0]:
+            cost_v += 1
     return cost_v
 
 
@@ -51,12 +45,12 @@ def fitness_func(individ):
 
 # check feasibility
 def isFeasible(individ):
-    value_sum = 0
-    for i in range(parameters.n):
-        value_sum += individ[i] * parameters.bill_values[i]
-    if value_sum != parameters.to_pay:
-        return False  # non feasible individual
-    return True  # feasible individual
+    # we check if we have 2 identical domino pieces
+    for i in range(parameters.m - 1):
+        for j in range(i + 1, parameters.m):
+            if dominos[individ[i]] == dominos[individ[j]]:
+                return False  # individual is non-feasible
+    return True  # individual is feasible
 
 
 # generating the initial population and the array of fitness values
@@ -71,14 +65,14 @@ def gen_pop():
         x = []
         wasAccepted = False
         # we generate the individual until we get a feasible individual
-        while wasAccepted == False:
+        while not wasAccepted:
             # we generate element by element in the individual
             x_fitness = 0
-            for j in range(parameters.n):
-                current_value = np.random.randint(0, parameters.max_bill_amounts[j] + 1)
+            for j in range(parameters.m):
+                current_value = np.random.randint(0, parameters.n)
                 x += [current_value]
             # after we have an individual, we check if it is feasible
-            if isFeasible(x) == True:
+            if isFeasible(x):
                 wasAccepted = True
                 pop += [x]  # we add x to the population
                 x_fitness = fitness_func(x)
@@ -137,7 +131,7 @@ def SUS_selection(pop, pop_fitness_ar):
 def uniform_crossover(p1, p2):
     c1 = p1.copy()
     c2 = p2.copy()
-    for i in range(parameters.n):
+    for i in range(parameters.m):
         doWeSwitch = np.random.randint(0, 2)
         if doWeSwitch == 1:
             c1[i] = p2[i]
@@ -175,21 +169,10 @@ def crossover_pop(pop, pop_fitness):
     return children_pop, children_fitness
 
 
-# creep mutation
-def creep_mutation(to_mutate, lower_bound, higher_bound):
-    prob = np.random.randint(0, 2)
-    if prob == 1:
-        sign = 1
-    else:
-        sign = -1
-
-    mutated = to_mutate + sign
-    if mutated > higher_bound:
-        mutated = higher_bound
-    if mutated < lower_bound:
-        mutated = lower_bound
-
-    return mutated
+# random resetting mutation
+def random_resetting_mutation(to_mutate, lower_bound, higher_bound):
+    m_gene = np.random.randint(lower_bound, higher_bound)
+    return m_gene
 
 
 # population mutation
@@ -198,10 +181,10 @@ def pop_mutation(pop, pop_fitness):
     mutated_pop_fitness = pop_fitness.copy()
     for i in range(parameters.pop_size):
         possible_mutant = pop[i].copy()
-        for j in range(parameters.n):
+        for j in range(parameters.m):
             prob = np.random.uniform(0, 1)
             if prob <= parameters.mutation_probability:
-                possible_mutant[j] = creep_mutation(possible_mutant[j], 0, parameters.max_bill_amounts[j])
+                possible_mutant[j] = random_resetting_mutation(possible_mutant[j], 0, parameters.n)
         isGood = isFeasible(possible_mutant)
         if isGood:
             mutant_fitness = fitness_func(possible_mutant)
@@ -260,7 +243,7 @@ def GA():
             nrm += 1
         else:
             nrm = 0
-        if next_pop_max == next_pop_min or nrm == int(parameters.max_iterations / 3):
+        if next_pop_max == 1 or next_pop_max == next_pop_min or nrm == int(parameters.max_iterations / 4):
             done = True
         else:
             iteration += 1
@@ -274,11 +257,13 @@ def GA():
     max_individual = initial_pop[max_position[0][0]]
     max_fitness = next_pop_max
 
-    print("We did {} iterations".format(iteration + 1))
     print("\nBest individual: ")
     print(max_individual)
     print("\nBest fitness: ")
     print(np.round(max_fitness, 4))
+    print("\nThe domino pieces:\n")
+    for i in range(parameters.m):
+        print(dominos[max_individual[i]], " ")
 
     # graph display
     yaxis = best_fit_history.copy()
@@ -286,5 +271,8 @@ def GA():
     for i in range(iteration + 2):
         xaxis += [i + 1]
 
-# import money_bills_problem as b
-# b.GA()
+    graph.title("Best Fitness Values over {0} iterations".format(iteration + 2))
+    graph.xlabel("Iteration no.")
+    graph.ylabel("Best fitness value of  x")
+    graph.plot(xaxis, yaxis)
+    graph.show()

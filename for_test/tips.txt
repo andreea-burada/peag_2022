@@ -1,0 +1,58 @@
+operatori utili 
+
+ crossover:
+
+ permutari  
+	->PMX
+	->CX
+	->OCX
+ binari 
+	-> uniforma
+	-> unipunct
+	-> multipunct
+ intregi 
+	-> uniforma
+	-> unipunct
+	-> multipunct
+ reali
+	->discret(~uniforma)
+	->aritmetica simpla
+	->aritmetica singulara
+	->aritmetica totala
+
+ mutatie:
+
+ permutari  
+	-> inserare -> dep de ordine (regine)
+	-> interschimbare -> dep de ordine (regine)
+	-> amestec -> tot adiacenta
+	-> inversiune -> pt dependenta de adiacenta (TSP)
+ binari 
+	-> bitflip
+ intregi 
+	-> resetare aleatoare (pt date cardinale)
+	-> fluaj (pt date ordinale)
+	
+ reali
+	-> uniforma (~resetare aleatoare)
+	-> neuniforma (~fluaj)
+
+
+
+
+tipuri de probleme rezolvate deja:
+
+rucsac discret
+rucsac continuu
+tsp
+regine
+avioane/cursuri
+transport
+puncte (ish eu am reprezentat altfel)
+grecia si conflictele
+cartonase cu grupe cu suma/produs
+copii cu echipe
+echipe in grupe
+numere naturale circular
+rearanjarea lui y ca sa dea x
+upu
