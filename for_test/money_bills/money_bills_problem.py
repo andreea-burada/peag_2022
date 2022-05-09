@@ -274,7 +274,7 @@ def GA():
     max_individual = initial_pop[max_position[0][0]]
     max_fitness = next_pop_max
 
-    print("We did {} iterations".format(iteration + 1))
+    print("We did {} iterations".format(iteration + 2))
     print("\nBest individual: ")
     print(max_individual)
     print("\nBest fitness: ")

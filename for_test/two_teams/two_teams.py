@@ -1,48 +1,36 @@
-# 2. The N Greek city-states are fighting each other for domination but they decide to unite against an
-# external threat. They set up a defense meeting, where each city-state may send a representative. Given
-# the historic animosity among the city-states, use a GA to find out a suitable round-table arrangement
-# of the representatives, i.e. every two neighbors belong to non-conflicting states. The animosity map is
-# expressed by the N squared matrix CONFLICT, where
-# 𝐶𝑂𝑁𝐹𝐿𝐼𝐶𝑇(𝑖, 𝑗) = { 1, 𝑖𝑓 𝑖 𝑎𝑛𝑑 𝑗 𝑎𝑟𝑒 𝑖𝑛 𝑎 𝑠𝑡𝑎𝑡𝑒 𝑜𝑓 𝑐𝑜𝑛𝑓𝑙𝑖𝑐𝑡 (𝑖 ≠ 𝑗 )
-#                 { 0, 𝑜𝑡ℎ𝑒𝑟𝑤𝑖𝑠𝑒
+# Un grup de n copii (nr. par) vor sa formeze doua echipe (numar egal) de fotbal pentru un meci amical.
+# Valoarea fiecarui jucator este estimata printr-un nr. intreg intre 1 si 10. Utilizati un algoritm
+# genetic pentru a realiza o impartire a grupului astfel incat valorile echipelor sa fie cat mai apropiate
+# (valoarea unei echipe e data de suma valorilor jucatorilor). n este o valoare intreaga intre 10 si 20
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as graph
 
 # parameters
 @dataclass
 class Parameters:
-    pop_size: int = 10
-    n: int = 7
+    pop_size: int = 20
+    n: int = 16
     max_iterations: int = 500
     crossover_probability: float = 0.8
     mutation_probability: float = 0.1
 
 
 parameters = Parameters()
-# the conflicts:
-# (1, 2); (1, 4); (1, 5); (1, 6); (1, 7); (2, 3); (2, 4); (2, 6); (3, 4);
-# (4, 5); (5, 6); (5, 7); (6, 7)
-conflict_matrix = [[0, 1, 0, 1, 1, 1, 1],
-                   [1, 0, 1, 1, 0, 1, 0],
-                   [0, 1, 0, 1, 0, 0, 0],
-                   [1, 1, 1, 0, 1, 0, 0],
-                   [0, 0, 0, 1, 0, 1, 1],
-                   [1, 1, 0, 0, 1, 0, 1],
-                   [1, 0, 0, 0, 1, 1, 0]]
+
+values = [1, 8, 4, 3, 1, 7, 3, 1, 7, 1, 3, 9, 10, 1, 10, 1]
 
 
 # fitness/objective function
 def fitness_func(individual):
-    conflict_no = 0
-    for i in range(parameters.n - 1):
-        if conflict_matrix[individual[i]][individual[i + 1]] == 1:
-            conflict_no += 1
-    # we check if the first and last are in conflict
-    if conflict_matrix[individual[0]][individual[parameters.n - 1]] == 1:
-        conflict_no += 1
-    return 1 / (1 + conflict_no)  # the solution of the GA will have fitness val = 1
+    team_1 = 0
+    team_2 = 0
+    for i in range(int(parameters.n / 2)):
+        team_1 += values[individual[i]]
+    for i in range(int(parameters.n / 2) + 1, parameters.n):
+        team_2 += values[individual[i]]
+    return min(team_1, team_2) / max(team_1, team_2)
 
 
 # generate pop
@@ -175,16 +163,17 @@ def crossover_pop(pop, pop_fitness):
     return children_pop, children_fitness
 
 
-# mutate individual by inverting the permutation
+# mutate individual by swap mutation
 def permutation_mutation(to_mutate):
-    # generating the positions for inversion
+    # generating the positions for swapping
     pos = np.random.randint(0, parameters.n, 2)
     while pos[0] == pos[1]:
         pos = np.random.randint(0, parameters.n, 2)
     pos1 = np.min(pos)
     pos2 = np.max(pos)
     mutated = to_mutate.copy()
-    mutated[pos1:pos2 + 1] = [to_mutate[i] for i in range(pos2, pos1 - 1, -1)]
+    mutated[pos1] = to_mutate[pos2]
+    mutated[pos2] = to_mutate[pos1]
 
     return mutated
 
@@ -239,6 +228,8 @@ def GA():
     iteration = 0
     done = False
     nrm = 1
+    team_1 = 0
+    team_2 = 0
     while iteration < parameters.max_iterations and not done:
         parent_pop, parent_fitness = SUS_selection(initial_pop, initial_pop_fitness)
         children_pop, children_fitness = crossover_pop(parent_pop, parent_fitness)
@@ -254,8 +245,9 @@ def GA():
             nrm += 1
         else:
             nrm = 0
-        if next_pop_max == 1 or nrm == int(parameters.max_iterations / 2):
+        if next_pop_max == 1 or next_pop_min == next_pop_max or nrm == int(parameters.max_iterations / 3):
             done = True
+
         else:
             iteration += 1
 
@@ -266,12 +258,19 @@ def GA():
     max_position = np.where(initial_pop_fitness == next_pop_max)
     max_individual = initial_pop[max_position[0][0]]
     max_fitness = next_pop_max
+    team_1 = 0
+    team_2 = 0
+    for i in range(int(parameters.n / 2)):
+        team_1 += values[max_individual[i]]
+    for i in range(int(parameters.n / 2) + 1, parameters.n):
+        team_2 += values[max_individual[i]]
 
     print("We did {} iterations".format(iteration + 2))
     print("\nBest individual: ")
     print(max_individual)
     print("\nBest fitness: ")
     print(np.round(max_fitness, 4))
+    print("\nTeam 1 value: {0}\tTeam 2 value: {1}".format(team_1, team_2))
 
     # graph display
     yaxis = best_fit_history.copy()
